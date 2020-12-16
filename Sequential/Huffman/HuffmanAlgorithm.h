@@ -38,7 +38,6 @@ public:
         this->SortByFrequency();
 
         LinkedList<HuffmanNode*>* newList = this->CopyLinkedList();
-
         while(newList->GetSize() > 1) {
             ListNode<HuffmanNode*>* a = newList->GetElementAt(0);
             ListNode<HuffmanNode*>* b = newList->GetElementAt(1);
@@ -55,6 +54,7 @@ public:
         }
         this->tree->root = newList->begin->value;
         newList->Destroy();
+
         this->SetBitData();
         this->GenerateBitText();
         this->GenerateHuffmanText();

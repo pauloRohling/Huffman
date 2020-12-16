@@ -2,7 +2,7 @@
 #include <HuffmanAlgorithm.h>
 
 //SEQUENCIAL
-const int NUMBERS_OF_TESTS = 10;
+const int NUMBERS_OF_TESTS = 40;
 const string TESTS_FILEPATH = "tests.txt";
 
 double CalculateAverageTime() {
@@ -29,10 +29,6 @@ int main() {
         cout << "#" << i+1 << endl;
         cout << "######################## ENCODING ########################" << endl;
         root->Encode("prologue.txt", "prologueText.txt", "prologueKey.txt");
-//        cout << "TARGET TEXT: " << endl << root->GetTargetText() << endl << endl;
-//        cout << "BIT TEXT: " << endl << root->GetBitText() << endl << endl;
-//        cout << "HUFFMAN TEXT: " << endl << root->GetHuffmanText() << endl << endl << endl << endl;
-
         root->Reset();
 
         cout << "######################## DECODING ########################" << endl;

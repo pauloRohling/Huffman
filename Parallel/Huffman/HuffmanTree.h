@@ -5,7 +5,7 @@
 #include <omp.h>
 #include <iostream>
 
-const int NTHREADS = 1;
+const int NTHREADS = 8;
 
 using namespace std;
 

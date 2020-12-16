@@ -2,6 +2,7 @@
 #define HUFFMAN_H
 
 #include <HuffmanTree.h>
+#include <bitset>
 #include "LinkedList.h"
 #include "FileManager.h"
 
@@ -41,17 +42,14 @@ public:
         int symbolThreadSize = MAXSYMBOLS / NTHREADS;
         int frequencies[MAXSYMBOLS];
 
-
-        double timeStart = omp_get_wtime();
-        #pragma omp parallel num_threads(NTHREADS)
+        #pragma omp parallel
         {
             int id = omp_get_thread_num();
             int start = id * threadSize;
-//            printf("ID: %d\n", id);
             int end = (start + threadSize < size) ? start + threadSize : size;
-            for(int i = start; i < end; i++) {
+
+            for(int i = start; i < end; i++)
                 symbolsPerThread[MAXSYMBOLS * id + int(this->targetText.at(unsigned(i)))]++;
-            }
 
             #pragma omp barrier
 
@@ -60,39 +58,17 @@ public:
 
             for(int i = start; i < end; i++) {
                 frequencies[i] = 0;
-                for(int j = 0; j < NTHREADS; j++) {
+                for(int j = 0; j < NTHREADS; j++)
                     frequencies[i] += symbolsPerThread[MAXSYMBOLS * j + i];
-                }
             }
         }
 
-//        printf("ID: %d\n", 12312321);
-
         for(int i = 0; i < MAXSYMBOLS; i++) {
-            if(frequencies[i] != 0 && frequencies[i] != 13) {
+            if(frequencies[i] != 0 && i != 13) {
                 HuffmanNode* node = new HuffmanNode(frequencies[i], char(i));
                 this->list->AddEnd(node);
             }
         }
-
-
-
-//        int size = int(this->targetText.size()), counter;
-//        #pragma omp parallel for num_threads(NTHREADS) default(none) shared(size)
-//        for(int i = 0; i < size; i++) {
-//            char targetChar = this->targetText.at(unsigned(i));
-
-//            if(int(targetChar) != 13 && !this->Contains(targetChar)) {
-//                HuffmanNode* node = new HuffmanNode(0, targetChar);
-//                counter = 0;
-//                for(int j = 0; j < size; j++)
-//                    if(targetText.at(unsigned(j)) == targetChar)
-//                        counter++;
-//                node->frequency = counter;
-//                this->list->AddEnd(node);
-//            }
-//        }
-        cout << "TIME: " << omp_get_wtime() - timeStart << " seconds." << endl;
 
         this->SortByFrequency();
 
@@ -247,7 +223,6 @@ private:
 
     void SetBitData() {
         int size = this->list->GetSize();
-//        #pragma omp parallel for num_threads(NTHREADS)
         for(int i = 0; i < size; i++) {
             HuffmanNode* node = this->list->GetValueAt(i);
             node->bitData = this->GetTrack(this->tree->root, node->data, "");
@@ -294,19 +269,6 @@ private:
             base *= 2;
         }
         return decimal;
-    }
-
-    string DecimalToBinary(int n) {
-        string number = "";
-        int i = 0;
-        while (n > 0) {
-            number.insert(0, to_string(n % 2));
-            n = n / 2;
-            i++;
-        }
-        while(number.size() < 8)
-            number.insert(0, "0");
-        return number;
     }
 
     void GenerateBitText() {
@@ -381,47 +343,29 @@ private:
     }
 
     void GenerateBitTextFromHuffmanText() {
-        string tempString, texts[NTHREADS];
-        char targetChar;
-        int size = int(this->huffmanText.size()),
-                    threadSize = size / NTHREADS,
-                    sizeRest = size - (threadSize * NTHREADS),
-                    temp, id;
+        int size = int(this->huffmanText.size());
+        int threadSize = size / NTHREADS;
+        int* chars = new int[unsigned(size)];
 
-//        #pragma omp parallel num_threads(NTHREADS) default(none) private(targetChar, temp, id) shared(size, threadSize)
-//        {
-//            #pragma omp single
-//            {
-//                for(int j = 0; j < NTHREADS; j++) {
-//                    #pragma omp task
-//                    {
-//                        id = j;
-//                        tempString = "";
-//                        for(int i = threadSize * id; i < threadSize * (id+1); i++) {
-//                            targetChar = this->huffmanText.at(unsigned(i));
-//                            temp = (int(targetChar) < 0) ? int(targetChar) + 256 : int(targetChar);
+        #pragma omp parallel
+        {
+            int id = omp_get_thread_num();
+            int start = id * threadSize;
+            int end = (start + threadSize < size) ? start + threadSize : size;
+            int targetInt;
+            char targetChar;
 
-//                            if(!(int(temp) == 13 && int(this->huffmanText.at(unsigned(i)+1)) == 10))
-//                                tempString += DecimalToBinary(temp);
-//                        }
-//                        texts[id] = tempString;
-//                    }
-//                }
-//            }
-//        }
-
+            for(int i = start; i < end; i++) {
+                targetChar = this->huffmanText.at(unsigned(i));
+                targetInt = (int(targetChar) < 0) ? int(targetChar) + 256 : int(targetChar);
+                if(!(int(targetChar) == 13 && int(this->huffmanText.at(unsigned(i)+1)) == 10))
+                    chars[i] += targetInt;
+            }
+        }
 
         this->bitText = "";
-        for(int i = 0; i < size; i++) {
-            targetChar = this->huffmanText.at(unsigned(i));
-            temp = (int(targetChar) < 0) ? int(targetChar) + 256 : int(targetChar);
-
-            if(!(int(temp) == 13 && int(this->huffmanText.at(unsigned(i)+1)) == 10))
-                this->bitText += DecimalToBinary(temp);
-        }
-        for(int i = 0; i < NTHREADS; i++) {
-            this->bitText += texts[i];
-        }
+        for(int i = 0; i < size; i++)
+            this->bitText += bitset<8>(unsigned(chars[i])).to_string();
 
         for(int i = 0; i < this->bitTextOverflow; i++)
             this->bitText.erase(this->bitText.end()-1);
